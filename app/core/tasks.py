@@ -28,7 +28,6 @@ class Task(ABC):
         self.status = status
 
 
-# Implement our initial tasks
 class TaskA(Task):
     def __init__(self):
         super().__init__("task_a")
