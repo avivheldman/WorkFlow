@@ -45,6 +45,7 @@ class TaskState(BaseModel):
 
 class StepState(BaseModel):
     execution_type: ExecutionType
+    Field()
     tasks: Dict[str, TaskState] = Field(default_factory=dict)
     status: TaskStatus = TaskStatus.PENDING
 
