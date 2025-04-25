@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-#from app.api.routes import router
+from app.api.routers import router
 
 # Create FastAPI app with metadata for Swagger
 app = FastAPI(
@@ -10,7 +10,7 @@ app = FastAPI(
 )
 
 
-#app.include_router(router)
+app.include_router(router)
 
 @app.get("/health", tags=["health"])
 def health_check():
