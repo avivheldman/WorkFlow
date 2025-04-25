@@ -1,63 +1,21 @@
-import asyncio
+from fastapi import FastAPI
+#from app.api.routes import router
 
-from app.core.repository import InMemoryStateRepository, RedisStateRepository
-from app.core.tasks import TaskA, TaskB, TaskC
-from app.core.execution import ParallelExecution,SequentialExecution
-
-async def test_sequential_execution():
-    print("\n----- Testing Sequential Execution -----")
-    tasks = [TaskA(), TaskB(), TaskC()]
-    print(f"Created tasks: {[task.name for task in tasks]}")
-    strategy = SequentialExecution()
-    print("Executing tasks sequentially...")
-    results = await strategy.execute(tasks)
-
-    print("Execution results:")
-    for task_name, success in results.items():
-        print(f"  {task_name}: {'Success' if success else 'Failed'}")
-
-    return results
+# Create FastAPI app with metadata for Swagger
+app = FastAPI(
+    title="Workflow Engine API",
+    description="A simple workflow engine that can execute tasks in sequence or parallel",
+    version="0.1.0",
+    docs_url="/docs",
+)
 
 
-async def test_parallel_execution():
-    print("\n----- Testing Parallel Execution -----")
-    tasks = [TaskA(), TaskB(), TaskC()]
-    print(f"Created tasks: {[task.name for task in tasks]}")
-    strategy = ParallelExecution()
-    print("Executing tasks in parallel...")
-    results = await strategy.execute(tasks)
-    print("Execution results:")
-    for task_name, success in results.items():
-        print(f"  {task_name}: {'Success' if success else 'Failed'}")
+#app.include_router(router)
 
-    return results
+@app.get("/health", tags=["health"])
+def health_check():
+    return {"status": "healthy"}
 
-
-async def test_repository():
-    print("\n----- Testing State Repository -----")
-
-    memory_repo = InMemoryStateRepository()
-    test_state = {"status": "running", "tasks": {"task_a": "succeeded"}}
-    await memory_repo.save_workflow_state("test-workflow", test_state)
-
-    retrieved_state = await memory_repo.get_workflow_state("test-workflow")
-
-    print(f"Original state: {test_state}")
-    print(f"Retrieved state: {retrieved_state}")
-    try:
-        redis_repo = RedisStateRepository()
-        await redis_repo.save_workflow_state("test-workflow", test_state)
-        redis_state = await redis_repo.get_workflow_state("test-workflow")
-        print(f"Redis state: {redis_state}")
-    except Exception as e:
-        print(f"Redis test skipped: {str(e)}")
-
-
-async def main():
-    print("Testing workflow engine components...")
-    await test_sequential_execution()
-    await test_parallel_execution()
-    await test_repository()
-    print("\nAll tests completed!")
 if __name__ == "__main__":
-    asyncio.run(main())
+    import uvicorn
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
