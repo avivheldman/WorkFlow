@@ -15,15 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class WorkflowFactory:
-    """Factory for creating workflow instances."""
-
     def __init__(self, repository: StateRepository):
-        """
-        Initialize the workflow factory.
-
-        Args:
-            repository: The repository to use for state management
-        """
         self.repository = repository
         logger.info("Initialized WorkflowFactory")
 
