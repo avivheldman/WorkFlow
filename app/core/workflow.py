@@ -1,6 +1,6 @@
 # app/core/workflow.py
 from datetime import datetime
-from typing import Optional
+from typing import Optional,List
 
 from app.core.execution import SequentialExecution, ParallelExecution
 from app.core.repository import StateRepository
@@ -78,3 +78,10 @@ class WorkflowEngine:
             return None
 
         return WorkflowState(**state_dict)
+
+    async def get_all_workflows(self) -> List[WorkflowState]:
+        try:
+            state_dicts = await self.repository.get_all_workflow_states()
+            return [WorkflowState(**state_dict) for state_dict in state_dicts]
+        except Exception as e:
+            print(e)

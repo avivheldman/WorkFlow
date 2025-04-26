@@ -1,15 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
-from typing import Dict
+from typing import List
 
 from app.core.workflow import WorkflowEngine
-from app.schemas.workflow import WorkflowDefinition
+from app.schemas.workflow import WorkflowDefinition, WorkflowState
 from app.core.repository import RedisStateRepository, InMemoryStateRepository
 
 router = APIRouter()
 
-
 def get_workflow_engine():
-    """Get a workflow engine with repository"""
     try:
         # Try Redis first
         repo = RedisStateRepository()
@@ -45,8 +43,19 @@ async def get_workflow(
         workflow_id: str,
         engine: WorkflowEngine = Depends(get_workflow_engine)
 ):
-    workflow = await engine.get_workflow(workflow_id)
+    workflow = await engine.get_workflow_state(workflow_id)
     if not workflow:
         raise HTTPException(status_code=404, detail="Workflow not found")
 
     return workflow
+
+@router.get(
+    "/workflows",
+    response_model=List[WorkflowState],
+    summary="Get all workflows",
+    description="Retrieves all workflows in the system"
+)
+async def get_all_workflows(
+    engine: WorkflowEngine = Depends(get_workflow_engine)
+):
+    return await engine.get_all_workflows()

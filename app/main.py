@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.api.routers import router
+from app.routers.workflow import router
 
 # Create FastAPI app with metadata for Swagger
 app = FastAPI(

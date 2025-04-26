@@ -1,4 +1,4 @@
-from tasks import Task,TaskA,TaskB,TaskC
+from .tasks import Task,TaskA,TaskB,TaskC
 class TaskFactory:
     @staticmethod
     def create_task(task_name: str) -> Task:
