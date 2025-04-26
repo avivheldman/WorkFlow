@@ -20,15 +20,6 @@ class WorkflowFactory:
         logger.info("Initialized WorkflowFactory")
 
     async def create_workflow(self, definition: WorkflowDefinition) -> WorkflowState:
-        """
-        Create a new workflow from a definition.
-
-        Args:
-            definition: The workflow definition
-
-        Returns:
-            The created workflow state
-        """
         workflow_id = str(uuid.uuid4())
         logger.info(f"Creating workflow with ID: {workflow_id}, name: {definition.name}")
 
