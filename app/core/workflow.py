@@ -1,6 +1,3 @@
-"""
-Workflow engine module for creating and executing workflows.
-"""
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 import logging
@@ -9,26 +6,13 @@ from app.core.execution import SequentialExecution, ParallelExecution
 from app.core.repository import StateRepository
 from app.core.task_factory import TaskFactory
 from app.schemas.workflow import ExecutionType, WorkflowDefinition, WorkflowState, WorkflowStatus, TaskStatus
-
+from app.core.workflow_factory import WorkflowFactory
 logger = logging.getLogger(__name__)
 
 
 class WorkflowEngine:
-    """
-    Workflow engine for creating and executing workflows.
-    """
-
     def __init__(self, state_repository: StateRepository):
-        """
-        Initialize the workflow engine.
-
-        Args:
-            state_repository: The repository to use for state management
-        """
         self.state_repository = state_repository
-
-        # Import WorkflowFactory here to avoid circular imports
-        from app.core.workflow_factory import WorkflowFactory
         self.workflow_factory = WorkflowFactory(state_repository)
 
         self.task_factory = TaskFactory()
@@ -39,27 +23,9 @@ class WorkflowEngine:
         logger.info("Initialized WorkflowEngine")
 
     async def create_workflow(self, workflow_def: WorkflowDefinition) -> WorkflowState:
-        """
-        Create a new workflow.
-
-        Args:
-            workflow_def: The workflow definition
-
-        Returns:
-            The created workflow state
-        """
         return await self.workflow_factory.create_workflow(workflow_def)
 
     async def get_workflow_state(self, workflow_id: str) -> Optional[WorkflowState]:
-        """
-        Get the state of a workflow.
-
-        Args:
-            workflow_id: The ID of the workflow
-
-        Returns:
-            The workflow state, or None if not found
-        """
         state_dict = await self.state_repository.get_workflow_state(workflow_id)
         if not state_dict:
             return None
@@ -68,13 +34,10 @@ class WorkflowEngine:
     async def execute_workflow(self, workflow_id: str) -> WorkflowState:
         """
         Execute a workflow.
-
         Args:
             workflow_id: The ID of the workflow to execute
-
         Returns:
             The updated workflow state
-
         Raises:
             ValueError: If the workflow is not found
         """
@@ -88,17 +51,12 @@ class WorkflowEngine:
         workflow_state.updated_at = datetime.now().isoformat()
 
         logger.info(f"Starting execution of workflow {workflow_id} ({workflow_state.name})")
-
-        # Log the steps in the workflow for debugging
         logger.info(f"Workflow has the following steps: {list(workflow_state.steps.keys())}")
 
         await self.state_repository.save_workflow_state(workflow_id, workflow_state.dict())
-
-        # Get sorted step indices - make sure to keep them as strings
         step_indices = sorted([k for k in workflow_state.steps.keys()])
         logger.info(f"Steps to execute in order: {step_indices}")
 
-        # Execute steps in sequence
         for step_idx in step_indices:
             logger.info(f"Processing step {step_idx}")
 
@@ -114,14 +72,9 @@ class WorkflowEngine:
             step.status = TaskStatus.RUNNING
 
             logger.info(f"Executing step {step_idx} with execution type {step.execution_type}")
-
-            # Save state to mark step as running
             await self.state_repository.save_workflow_state(workflow_id, workflow_state.dict())
-
-            # Execute the step
             success = await self._execute_step(workflow_id, workflow_state, step_idx, step)
 
-            # If step failed, fail the workflow
             if not success:
                 workflow_state.status = WorkflowStatus.FAILED
                 workflow_state.updated_at = datetime.now().isoformat()
@@ -129,7 +82,6 @@ class WorkflowEngine:
                 logger.warning(f"Workflow {workflow_id} failed at step {step_idx}")
                 return workflow_state
 
-        # All steps succeeded
         workflow_state.status = WorkflowStatus.SUCCEEDED
         workflow_state.updated_at = datetime.now().isoformat()
         logger.info(f"Workflow {workflow_id} completed successfully")
@@ -151,10 +103,8 @@ class WorkflowEngine:
             bool: True if the step succeeded, False otherwise
         """
         try:
-            # Debug log to check what tasks are in the step
             logger.debug(f"Step {step_idx} contains tasks: {list(step.tasks.keys())}")
 
-            # Check if tasks exist
             if not step.tasks:
                 logger.error(f"Step {step_idx} has no tasks")
                 return False
@@ -171,11 +121,8 @@ class WorkflowEngine:
                     logger.error(f"Failed to create task {task_name}: {e}")
                     return False
 
-            # Get execution strategy
             execution_strategy = self.execution_strategies[step.execution_type]
             logger.debug(f"Using {step.execution_type} execution strategy for step {step_idx}")
-
-            # Execute tasks
             try:
                 results = await execution_strategy.execute(tasks)
                 logger.debug(f"Execution results: {results}")
@@ -213,12 +160,6 @@ class WorkflowEngine:
             return False
 
     async def get_all_workflows(self) -> List[WorkflowState]:
-        """
-        Get all workflows.
-
-        Returns:
-            List of workflow states
-        """
         try:
             state_dicts = await self.state_repository.get_all_workflow_states()
             logger.debug(f"Retrieved {len(state_dicts)} workflow states")

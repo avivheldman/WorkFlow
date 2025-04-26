@@ -22,7 +22,6 @@ class SequentialExecution(Execution):
                 result = await task.execute()
                 results[task.name] = result
                 logger.info(f"Task {task.name} completed with result: {result}")
-                # If a task fails, stop execution
                 if not result:
                     logger.warning(f"Task {task.name} failed, stopping sequential execution")
                     break
@@ -39,7 +38,6 @@ class ParallelExecution(Execution):
         results = {}
 
         try:
-            # Create tasks with explicit naming for better debugging
             pending_tasks = []
             for task in tasks:
                 logger.debug(f"Adding task {task.name} to parallel execution")

@@ -1,6 +1,3 @@
-"""
-Repository factory module to handle the creation and management of state repositories.
-"""
 import logging
 from typing import Optional
 from redis.asyncio import Redis
@@ -14,15 +11,10 @@ logger = logging.getLogger(__name__)
 
 
 class RepositoryFactory:
-    """Factory for creating and managing state repositories."""
-
     _instance: Optional[StateRepository] = None
 
     @classmethod
     async def initialize(cls):
-        """
-        Initialize the repository. This should be called during application startup.
-        """
         if cls._instance is not None:
             return
 
@@ -39,8 +31,6 @@ class RepositoryFactory:
         """
         if cls._instance is not None:
             return cls._instance
-
-        # Try to create a Redis repository first
         try:
             logger.info("Attempting to connect to Redis...")
             redis_client = Redis(
@@ -51,7 +41,6 @@ class RepositoryFactory:
                 decode_responses=True
             )
 
-            # Test the connection with a simple command
             try:
                 await asyncio.wait_for(redis_client.ping(), timeout=2.0)
                 logger.info("Successfully connected to Redis")
@@ -68,7 +57,6 @@ class RepositoryFactory:
             logger.warning(f"Redis connection failed: {e}")
             logger.warning("Falling back to in-memory storage")
 
-        # Fall back to in-memory repository
         logger.info("Initializing in-memory state repository")
         cls._instance = InMemoryStateRepository()
         return cls._instance

@@ -1,6 +1,3 @@
-"""
-Workflow router module for handling workflow API endpoints.
-"""
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from typing import List, Callable, Awaitable
 import logging
@@ -12,24 +9,15 @@ from app.core.repository import StateRepository
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["workflows"])
-
-# Global repository instance to avoid recreating it for each request
 _repository = None
 
 async def get_repository() -> StateRepository:
-    """
-    Get the repository instance, initializing it if needed.
-    """
     global _repository
     if _repository is None:
         _repository = await RepositoryFactory.get_repository()
     return _repository
 
 async def get_workflow_engine() -> WorkflowEngine:
-    """
-    Dependency that provides a WorkflowEngine instance.
-    Uses the repository provided by get_repository().
-    """
     repo = await get_repository()
     return WorkflowEngine(repo)
 
@@ -45,17 +33,7 @@ async def create_workflow(
         background_tasks: BackgroundTasks,
         engine: WorkflowEngine = Depends(get_workflow_engine)
 ):
-    """
-    Create and execute a new workflow.
 
-    Args:
-        definition: The workflow definition
-        background_tasks: FastAPI background tasks
-        engine: The workflow engine
-
-    Returns:
-        Dict with workflow_id, status and message
-    """
     try:
         logger.info(f"Creating workflow with name: {definition.name}")
         workflow = await engine.create_workflow(definition)
@@ -85,19 +63,6 @@ async def get_workflow(
         workflow_id: str,
         engine: WorkflowEngine = Depends(get_workflow_engine)
 ):
-    """
-    Get a workflow by ID.
-
-    Args:
-        workflow_id: The ID of the workflow to retrieve
-        engine: The workflow engine
-
-    Returns:
-        The workflow state
-
-    Raises:
-        HTTPException: If the workflow is not found
-    """
     logger.info(f"Getting workflow with ID: {workflow_id}")
     workflow = await engine.get_workflow_state(workflow_id)
 
@@ -118,15 +83,7 @@ async def get_workflow(
 async def get_all_workflows(
     engine: WorkflowEngine = Depends(get_workflow_engine)
 ):
-    """
-    Get all workflows.
 
-    Args:
-        engine: The workflow engine
-
-    Returns:
-        List of workflow states
-    """
     try:
         logger.info("Getting all workflows")
         workflows = await engine.get_all_workflows()
