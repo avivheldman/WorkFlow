@@ -1,12 +1,11 @@
-# app/core/workflow.py
 from datetime import datetime
 from typing import Optional,List
 
-from app.core.execution import SequentialExecution, ParallelExecution
-from app.core.repository import StateRepository
-from app.core.task_factory import TaskFactory
-from app.core.workflow_factory import WorkflowFactory
-from app.schemas.workflow import ExecutionType, WorkflowDefinition, WorkflowState, WorkflowStatus, TaskStatus
+from core.execution import SequentialExecution, ParallelExecution
+from core.repository import StateRepository
+from core.task_factory import TaskFactory
+from core.workflow_factory import WorkflowFactory
+from schemas.workflow import ExecutionType, WorkflowDefinition, WorkflowState, WorkflowStatus, TaskStatus
 
 
 class WorkflowEngine:
@@ -72,16 +71,10 @@ class WorkflowEngine:
 
         return workflow_state
 
-    async def get_workflow_state(self, workflow_id: str) -> Optional[WorkflowState]:
-        state_dict = await self.state_repository.get_workflow_state(workflow_id)
-        if not state_dict:
-            return None
-
-        return WorkflowState(**state_dict)
-
     async def get_all_workflows(self) -> List[WorkflowState]:
         try:
-            state_dicts = await self.repository.get_all_workflow_states()
+            state_dicts = await self.state_repository.get_all_workflow_states()
             return [WorkflowState(**state_dict) for state_dict in state_dicts]
         except Exception as e:
-            print(e)
+            print(f"Error in get_all_workflows: {e}")
+            raise

@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 from typing import List, Union, Dict, Any, Optional
 from enum import Enum
 import uuid
+from datetime import datetime
 
 class ExecutionType(str, Enum):
     SEQUENTIAL = "sequential"
@@ -45,7 +46,6 @@ class TaskState(BaseModel):
 
 class StepState(BaseModel):
     execution_type: ExecutionType
-    Field()
     tasks: Dict[str, TaskState] = Field(default_factory=dict)
     status: TaskStatus = TaskStatus.PENDING
 

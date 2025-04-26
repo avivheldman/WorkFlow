@@ -58,4 +58,10 @@ async def get_workflow(
 async def get_all_workflows(
     engine: WorkflowEngine = Depends(get_workflow_engine)
 ):
-    return await engine.get_all_workflows()
+    try:
+        return await engine.get_all_workflows()
+    except Exception as e:
+        import traceback
+        print(f"Error in get_all_workflows endpoint: {e}")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")

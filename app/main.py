@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 from app.routers.workflow import router
 
-# Create FastAPI app with metadata for Swagger
 app = FastAPI(
     title="Workflow Engine API",
     description="A simple workflow engine that can execute tasks in sequence or parallel",

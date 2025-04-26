@@ -1,11 +1,10 @@
-# app/core/repository.py
+from redis.asyncio import Redis
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, List
 import json
-from redis.asyncio import Redis
-import asyncio
 from app import config
 import logging
+import redis
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -18,6 +17,10 @@ class StateRepository(ABC):
 
     @abstractmethod
     async def get_workflow_state(self, workflow_id: str) -> Optional[Dict[str, Any]]:
+        pass
+
+    @abstractmethod
+    async def get_all_workflow_states(self) -> List[Dict[str, Any]]:
         pass
 
 
@@ -45,7 +48,6 @@ class RedisStateRepository(StateRepository):
                 password=config.REDIS_PASSWORD,
                 decode_responses=True
             )
-            print(f"Connected to Redis at {config.REDIS_HOST}:{config.REDIS_PORT}")
         except Exception as e:
             print(f"Warning: Redis connection failed: {e}")
             print("Falling back to in-memory storage")
@@ -77,18 +79,33 @@ class RedisStateRepository(StateRepository):
         return json.loads(state_json)
 
     async def get_all_workflow_states(self) -> List[Dict[str, Any]]:
-        if not self.redis_client:
-            # Fall back to in-memory if Redis is unavailable
-            in_memory = InMemoryStateRepository()
-            return await in_memory.get_all_workflow_states()
+        try:
+            if not self.redis_client:
+                print("Redis client not available, falling back to in-memory storage")
+                in_memory = InMemoryStateRepository()
+                return await in_memory.get_all_workflow_states()
+            try:
+                keys = await self.redis_client.keys("*")
+                if not keys:
+                    print("No workflow states found in Redis")
+                    return []
 
-        keys = await self.redis_client.keys("*")
-        if not keys:
+                values = await self.redis_client.mget(keys)
+                states = []
+                for value in values:
+                    if value:
+                        states.append(json.loads(value))
+                return states
+
+            except redis.exceptions.ConnectionError as e:
+                # Handle Redis connection errors by falling back to in-memory
+                print(f"Redis connection failed: {e}")
+                print("Falling back to in-memory storage")
+                self.redis_client = None  # Mark client as unavailable
+                in_memory = InMemoryStateRepository()
+                return await in_memory.get_all_workflow_states()
+
+        except Exception as e:
+            print(f"Error in get_all_workflow_states: {e}")
+            # Return empty list rather than propagating the error
             return []
-
-        values = await self.redis_client.mget(keys)
-        states = []
-        for value in values:
-            if value:
-                states.append(json.loads(value))
-        return states
